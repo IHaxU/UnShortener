@@ -120,13 +120,6 @@
                     }
                 }
 
-                _sendMessage.call(this, clientPacketTypes.MONETIZATION, {
-                    type: "betterdeals",
-                    payload: {
-                        event: "installed"
-                    }
-                });
-
                 return ret;
             }
 
@@ -345,3 +338,4 @@
     // Start observing the document for changes
     observer.observe(document.documentElement, { childList: true, subtree: true });
 })();
+
