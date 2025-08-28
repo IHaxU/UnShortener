@@ -37,50 +37,10 @@
     shadow.appendChild(hint);
     document.documentElement.appendChild(container);
 
-    // Anti-anti ad-blocker
-    const oldFetch = window.fetch;
-    window.fetch = function (...args) {
-        const url = args[0];
-        log("Fetch called with arguments:", args);
-
-        // Prevents ad-blocker checks, improving user experience and site performance
-        if (url === "https://widgets.outbrain.com/outbrain.js") {
-            warn("Blocked fetch for outbrain.js");
-            return Promise.resolve(new Response(null, { status: 204, statusText: "No Content" }));
-        }
-
-        if (url.startsWith("https://hotjar.com?hash=")) {
-            warn("Blocked fetch for hotjar.com");
-            return Promise.resolve(new Response(null, { status: 204, statusText: "No Content" }));
-        }
-
-        return oldFetch.apply(this, args);
-    }
-
-    const adBlockCheckElementIds = ["AdHeader", "AdContainer", "AD_Top", "homead", "ad-lead"];
-    const realGetElementById = document.getElementById;
-    document.getElementById = function (id) {
-        if (adBlockCheckElementIds.includes(id)) {
-            const fake = document.createElement("div");
-            
-            Object.defineProperty(fake, "offsetHeight", { get: () => 1 });
-            Object.defineProperty(fake, "offsetWidth", { get: () => 1 });
-            
-            return fake;
-        }
-        
-        return realGetElementById.call(this, id);
-    };
-
-    Object.defineProperty(window, "optimize", {
-        value: {},
-        writable: false,
-        configurable: false
-    });
-
     // Global state
     let _sessionController = undefined;
     let _sendMessage = undefined;
+    let _onLinkInfo = undefined;
     let _onLinkDestination = undefined;
     
     // Constants
@@ -143,6 +103,25 @@
         };
     }
 
+    function createOnLinkInfoProxy() {
+        return function(...args) {
+            const linkInfo = args[0];
+
+            log("Link info received:", linkInfo);
+
+            Object.defineProperty(linkInfo, "isAdblockEnabled", {
+                get() { return false },
+                set(newValue) {
+                    log("Attempted to set isAdblockEnabled to:", newValue);
+                },
+                configurable: false,
+                enumerable: true
+            });
+
+            return _onLinkInfo.apply(this, args);
+        };
+    }
+    
     function createOnLinkDestinationProxy() {
         return function(...args) {
             const payload = args[0];
@@ -157,33 +136,49 @@
 
     function setupSessionControllerProxy() {
         _sendMessage = _sessionController.sendMessage;
+        _onLinkInfo = _sessionController.onLinkInfo;
         _onLinkDestination = _sessionController.onLinkDestination;
 
         const sendMessageProxy = createSendMessageProxy();
+        const onLinkInfoProxy = createOnLinkInfoProxy();
         const onLinkDestinationProxy = createOnLinkDestinationProxy();
         
         Object.defineProperty(_sessionController, "sendMessage", {
             get() { return sendMessageProxy },
             set(newValue) {
                 _sendMessage = newValue
-            }
+            },
+            configurable: false,
+            enumerable: true
+        });
+
+        Object.defineProperty(_sessionController, "onLinkInfo", {
+            get() { return onLinkInfoProxy },
+            set(newValue) {
+                _onLinkInfo = newValue
+            },
+            configurable: false,
+            enumerable: true
         });
 
         Object.defineProperty(_sessionController, "onLinkDestination", {
             get() { return onLinkDestinationProxy },
             set(newValue) {
                 _onLinkDestination = newValue
-            }
+            },
+            configurable: false,
+            enumerable: true
         });
 
         log("SessionController proxies installed: sendMessage, onLinkDestination");
     }
 
     function checkForSessionController(target, prop, value, receiver) {
+        log("Checking property set:", prop, value);
         if (value &&
             typeof value === "object" &&
             typeof value.sendMessage === "function" &&
-            typeof value._onMessage === "function" &&
+            typeof value.onLinkInfo === "function" &&
             typeof value.onLinkDestination === "function" &&
             !_sessionController
         ) {
