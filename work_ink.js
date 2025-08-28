@@ -82,12 +82,43 @@
                 hint.textContent = "🎉 Captcha solved, redirecting...";
 
                 // Send bypass messages
-                _sendMessage.call(this, clientPacketTypes.MONETIZATION, {
-                    type: "readArticles2",
-                    payload: {
-                        event: "read"
+                for (const monetization of _sessionController.linkInfo.monetizations) {
+                    switch (monetization) {
+                        case 22: { // readArticles2
+                            _sendMessage.call(this, clientPacketTypes.MONETIZATION, {
+                                type: "readArticles2",
+                                payload: {
+                                    event: "read"
+                                }
+                            });
+                            break;
+                        }
+
+                        case 45: { // pdfeditor
+                            _sendMessage.call(this, clientPacketTypes.MONETIZATION, {
+                                type: "pdfeditor",
+                                payload: {
+                                    event: "installed"
+                                }
+                            });
+                            break;
+                        }
+
+                        case 57: { // betterdeals
+                            _sendMessage.call(this, clientPacketTypes.MONETIZATION, {
+                                type: "betterdeals",
+                                payload: {
+                                    event: "installed"
+                                }
+                            });
+                        }
+
+                        default: {
+                            log("Unknown monetization type:", monetization);
+                            break;
+                        }
                     }
-                });
+                }
 
                 _sendMessage.call(this, clientPacketTypes.MONETIZATION, {
                     type: "betterdeals",
