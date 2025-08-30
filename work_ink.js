@@ -37,6 +37,22 @@
     shadow.appendChild(hint);
     document.documentElement.appendChild(container);
 
+    const NAME_MAP = {
+        sendMessage: ["sendMessage", "sendMsg"],
+        onLinkInfo: ["onLinkInfo"],
+        onLinkDestination: ["onLinkDestination"]
+    };
+
+    function resolveName(obj, candidates) {
+        for (let i = 0; i < candidates.length; i++) {
+            const name = candidates[i];
+            if (typeof obj[name] === "function") {
+                return { fn: obj[name], index: i, name };
+            }
+        }
+        return { fn: null, index: -1, name: null };
+    }
+
     // Global state
     let _sessionController = undefined;
     let _sendMsg = undefined;
@@ -160,51 +176,52 @@
     }
 
     function setupSessionControllerProxy() {
-        _sendMsg = _sessionController.sendMsg;
-        _onLinkInfo = _sessionController.onLinkInfo;
-        _onLinkDestination = _sessionController.onLinkDestination;
+        const sendMessage = resolveName(_sessionController, NAME_MAP.sendMessage);
+        const onLinkInfo = resolveName(_sessionController, NAME_MAP.onLinkInfo);
+        const onLinkDestination = resolveName(_sessionController, NAME_MAP.onLinkDestination);
+
+        _sendMsg = sendMessage.fn;
+        _onLinkInfo = onLinkInfo.fn;
+        _onLinkDestination = onLinkDestination.fn;
 
         const sendMsgProxy = createSendMsgProxy();
         const onLinkInfoProxy = createOnLinkInfoProxy();
         const onLinkDestinationProxy = createOnLinkDestinationProxy();
-        
-        Object.defineProperty(_sessionController, "sendMsg", {
+
+        // Patch the actual property name that exists
+        Object.defineProperty(_sessionController, sendMessage.name, {
             get() { return sendMsgProxy },
-            set(newValue) {
-                _sendMsg = newValue
-            },
+            set(newValue) { _sendMsg = newValue },
             configurable: false,
             enumerable: true
         });
 
-        Object.defineProperty(_sessionController, "onLinkInfo", {
+        Object.defineProperty(_sessionController, onLinkInfo.name, {
             get() { return onLinkInfoProxy },
-            set(newValue) {
-                _onLinkInfo = newValue
-            },
+            set(newValue) { _onLinkInfo = newValue },
             configurable: false,
             enumerable: true
         });
 
-        Object.defineProperty(_sessionController, "onLinkDestination", {
+        Object.defineProperty(_sessionController, onLinkDestination.name, {
             get() { return onLinkDestinationProxy },
-            set(newValue) {
-                _onLinkDestination = newValue
-            },
+            set(newValue) { _onLinkDestination = newValue },
             configurable: false,
             enumerable: true
         });
 
-        log("SessionController proxies installed: sendMsg, onLinkDestination");
+        log(`SessionController proxies installed: ${sendMessage.name}, ${onLinkInfo.name}, ${onLinkDestination.name}`);
     }
 
     function checkForSessionController(target, prop, value, receiver) {
         log("Checking property set:", prop, value);
-        if (value &&
+
+        if (
+            value &&
             typeof value === "object" &&
-            typeof value.sendMsg === "function" &&
-            typeof value.onLinkInfo === "function" &&
-            typeof value.onLinkDestination === "function" &&
+            resolveName(value, NAME_MAP.sendMessage).fn &&
+            resolveName(value, NAME_MAP.onLinkInfo).fn &&
+            resolveName(value, NAME_MAP.onLinkDestination).fn &&
             !_sessionController
         ) {
             _sessionController = value;
@@ -339,4 +356,3 @@
     // Start observing the document for changes
     observer.observe(document.documentElement, { childList: true, subtree: true });
 })();
-
