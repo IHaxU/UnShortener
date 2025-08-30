@@ -1,7 +1,7 @@
 (function() {
     "use strict";
 
-    const DEBUG = true; // debug logging
+    const DEBUG = false; // debug logging
     const oldLog = console.log;
     const oldWarn = console.warn;
     const oldError = console.error;
@@ -339,3 +339,4 @@
     // Start observing the document for changes
     observer.observe(document.documentElement, { childList: true, subtree: true });
 })();
+
