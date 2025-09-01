@@ -6,5 +6,5 @@ Currently supported sites:
 
 ## Installation
 
-- **Chrome**: [Available on Chrome Web Store](https://chrome.google.com/webstore/detail/your-extension-id)
-- **Firefox**: (⏳ Awaiting Review on AMO)
+- **Chrome**: [Available on Chrome Web Store](https://chromewebstore.google.com/detail/unshortener/lbofegkljgedglhjmbiogbefmmgeapla)
+- **Firefox**: [Available on Add-ons for Firefox](https://addons.mozilla.org/en-US/firefox/addon/unshortener/)
