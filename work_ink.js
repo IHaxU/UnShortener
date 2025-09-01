@@ -38,7 +38,7 @@
     document.documentElement.appendChild(container);
 
     const NAME_MAP = {
-        sendMessage: ["sendMessage", "sendMsg", "writeMessage"],
+        sendMessage: ["sendMessage", "sendMsg", "writeMessage", "writeMsg"],
         onLinkInfo: ["onLinkInfo"],
         onLinkDestination: ["onLinkDestination"]
     };
