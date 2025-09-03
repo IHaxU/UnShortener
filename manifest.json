@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "UnShortener",
-    "version": "1.0.8",
+    "version": "1.0.9",
     "description": "UnShortener enhances your experience on navigating through links that are shortened.",
     "browser_specific_settings": {
         "gecko": {
@@ -23,3 +23,4 @@
         }
     ]
 }
+
