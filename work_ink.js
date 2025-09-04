@@ -135,6 +135,7 @@
                                     'noteligible': true
                                 })
                             });
+                            break;
                         }
 
                         case 34: { // operaGX
@@ -150,6 +151,7 @@
                                     event: "installClicked"
                                 }
                             });
+                            break;
                         }
 
                         case 71: { // externalArticles
@@ -159,6 +161,7 @@
                                     event: "installClicked"
                                 }
                             });
+                            break;
                         }
 
                         case 45: { // pdfeditor
@@ -407,3 +410,4 @@
     // Start observing the document for changes
     observer.observe(document.documentElement, { childList: true, subtree: true });
 })();
+
