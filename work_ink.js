@@ -138,7 +138,7 @@
                             break;
                         }
 
-                        case 34: { // operaGX
+                        case 34: { // norton
                             _sendMessage.call(this, clientPacketTypes.MONETIZATION, {
                                 type: "norton",
                                 payload: {
@@ -410,4 +410,5 @@
     // Start observing the document for changes
     observer.observe(document.documentElement, { childList: true, subtree: true });
 })();
+
 
