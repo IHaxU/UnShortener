@@ -1,15 +1,20 @@
 (function() {
     "use strict";
-
+    
     const DEBUG = false; // debug logging
+
+    // Preserve original console methods in case the site overrides them
     const oldLog = console.log;
     const oldWarn = console.warn;
     const oldError = console.error;
+    
+    // Wrapper functions prepend a tag and only log when DEBUG is true
     function log(...args) { if (DEBUG) oldLog("[UnShortener]", ...args); }
     function warn(...args) { if (DEBUG) oldWarn("[UnShortener]", ...args); }
     function error(...args) { if (DEBUG) oldError("[UnShortener]", ...args); }
 
-    if (DEBUG) console.clear = function() {}; // Disable console.clear to keep logs visible
+    // Override console.clear in DEBUG mode to prevent the site from erasing debug logs
+    if (DEBUG) console.clear = function() {};
 
     const container = document.createElement("div");
     container.style.position = "fixed";
@@ -78,6 +83,8 @@
         };
     }
 
+    const startTime = Date.now();
+
     function createSendMessageProxy() {
         const clientPacketTypes = getClientPacketTypes();
 
@@ -85,7 +92,9 @@
             const packet_type = args[0];
             const packet_data = args[1];
 
-            log("Sent message:", packet_type, packet_data);
+            if (packet_type !== clientPacketTypes.PING) {
+                log("Sent message:", packet_type, packet_data);
+            }
 
             if (packet_type === clientPacketTypes.ADBLOCKER_DETECTED) {
                 warn("Blocked adblocker detected message to avoid false positive.");
@@ -95,7 +104,7 @@
             if (_sessionController.linkInfo && packet_type === clientPacketTypes.TURNSTILE_RESPONSE) {
                 const ret = _sendMessage.apply(this, args);
 
-                hint.textContent = "🎉 Captcha solved, redirecting...";
+                hint.textContent = "⏳ Captcha solved, bypassing... (This can take up to a minute)";
 
                 // Send bypass messages
                 for (const social of _sessionController.linkInfo.socials) {
@@ -104,7 +113,9 @@
                     });
                 }
 
-                for (const monetization of _sessionController.linkInfo.monetizations) {
+                for (const monetizationIdx in _sessionController.linkInfo.monetizations) {
+                    const monetization = _sessionController.linkInfo.monetizations[monetizationIdx];
+
                     switch (monetization) {
                         case 22: { // readArticles2
                             _sendMessage.call(this, clientPacketTypes.MONETIZATION, {
@@ -131,6 +142,10 @@
                             });
                             fetch('https://work.ink/_api/v2/callback/operaGX', {
                                 method: 'POST',
+                                mode: 'no-cors',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
                                 body: JSON.stringify({
                                     'noteligible': true
                                 })
@@ -155,6 +170,12 @@
                         }
 
                         case 71: { // externalArticles
+                            _sendMessage.call(this, clientPacketTypes.MONETIZATION, {
+                                type: "externalArticles",
+                                payload: {
+                                    event: "start"
+                                }
+                            });
                             _sendMessage.call(this, clientPacketTypes.MONETIZATION, {
                                 type: "externalArticles",
                                 payload: {
@@ -216,14 +237,43 @@
             return _onLinkInfo.apply(this, args);
         };
     }
+
+    function updateHint(waitLeft) {
+        hint.textContent = `⏳ Destination found, redirecting in ${waitLeft} seconds...`;
+    }
+
+    function redirect(url) {
+        hint.textContent = "🎉 Redirecting to your destination...";
+        window.location.href = url;
+    }
+
+    function startCountdown(url, waitLeft) {
+        updateHint(waitLeft);
+
+        const interval = setInterval(() => {
+            waitLeft -= 1;
+            if (waitLeft > 0) {
+                updateHint(waitLeft);
+            } else {
+                clearInterval(interval);
+                redirect(url);
+            }
+        }, 1000);
+    }
     
     function createOnLinkDestinationProxy() {
-        return function(...args) {
+        return function (...args) {
             const payload = args[0];
-
             log("Link destination received:", payload);
 
-            window.location.href = payload.url;
+            const waitTimeSeconds = 30;
+            const secondsPassed = (Date.now() - startTime) / 1000;
+
+            if (secondsPassed >= waitTimeSeconds) {
+                redirect(payload.url);
+            } else {
+                startCountdown(payload.url, waitTimeSeconds - secondsPassed);
+            }
 
             return _onLinkDestination.apply(this, args);
         };
@@ -410,5 +460,3 @@
     // Start observing the document for changes
     observer.observe(document.documentElement, { childList: true, subtree: true });
 })();
-
-
