@@ -43,7 +43,6 @@
     document.documentElement.appendChild(container);
 
     const NAME_MAP = {
-        sendMessage: ["sendMessage", "sendMsg", "writeMessage", "writeMsg"],
         onLinkInfo: ["onLinkInfo"],
         onLinkDestination: ["onLinkDestination"]
     };
@@ -53,6 +52,15 @@
             const name = candidates[i];
             if (typeof obj[name] === "function") {
                 return { fn: obj[name], index: i, name };
+            }
+        }
+        return { fn: null, index: -1, name: null };
+    }
+
+    function resolveWriteFunction(obj) {
+        for (let i in obj) {
+            if (typeof obj[i] == "function" && obj[i].length == 2) {
+                return { fn: obj[i], name: i };
             }
         }
         return { fn: null, index: -1, name: null };
@@ -266,21 +274,14 @@
             const payload = args[0];
             log("Link destination received:", payload);
 
-            const waitTimeSeconds = 30;
-            const secondsPassed = (Date.now() - startTime) / 1000;
-
-            if (secondsPassed >= waitTimeSeconds) {
-                redirect(payload.url);
-            } else {
-                startCountdown(payload.url, waitTimeSeconds - secondsPassed);
-            }
+            startCountdown(payload.url, 30);
 
             return _onLinkDestination.apply(this, args);
         };
     }
 
     function setupSessionControllerProxy() {
-        const sendMessage = resolveName(_sessionController, NAME_MAP.sendMessage);
+        const sendMessage = resolveWriteFunction(_sessionController);
         const onLinkInfo = resolveName(_sessionController, NAME_MAP.onLinkInfo);
         const onLinkDestination = resolveName(_sessionController, NAME_MAP.onLinkDestination);
 
@@ -323,7 +324,7 @@
         if (
             value &&
             typeof value === "object" &&
-            resolveName(value, NAME_MAP.sendMessage).fn &&
+            resolveWriteFunction(value).fn &&
             resolveName(value, NAME_MAP.onLinkInfo).fn &&
             resolveName(value, NAME_MAP.onLinkDestination).fn &&
             !_sessionController
