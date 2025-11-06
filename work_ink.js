@@ -68,34 +68,127 @@
 
     // Global state
     let _sessionController = undefined;
+    let _linkInfo = undefined;
     let _sendMessage = undefined;
     let _onLinkInfo = undefined;
     let _onLinkDestination = undefined;
     
     // Constants
-    function getClientPacketTypes() {
-        return {
-            ANNOUNCE: "c_announce",
-            MONETIZATION: "c_monetization",
-            SOCIAL_STARTED: "c_social_started",
-            RECAPTCHA_RESPONSE: "c_recaptcha_response",
-            HCAPTCHA_RESPONSE: "c_hcaptcha_response",
-            TURNSTILE_RESPONSE: "c_turnstile_response",
-            ADBLOCKER_DETECTED: "c_adblocker_detected",
-            FOCUS_LOST: "c_focus_lost",
-            OFFERS_SKIPPED: "c_offers_skipped",
-            FOCUS: "c_focus",
-            WORKINK_PASS_AVAILABLE: "c_workink_pass_available",
-            WORKINK_PASS_USE: "c_workink_pass_use",
-            PING: "c_ping"
-        };
+    const clientPacketTypes = {
+        ANNOUNCE: "c_announce",
+        MONETIZATION: "c_monetization",
+        SOCIAL_STARTED: "c_social_started",
+        RECAPTCHA_RESPONSE: "c_recaptcha_response",
+        HCAPTCHA_RESPONSE: "c_hcaptcha_response",
+        TURNSTILE_RESPONSE: "c_turnstile_response",
+        ADBLOCKER_DETECTED: "c_adblocker_detected",
+        FOCUS_LOST: "c_focus_lost",
+        OFFERS_SKIPPED: "c_offers_skipped",
+        FOCUS: "c_focus",
+        WORKINK_PASS_AVAILABLE: "c_workink_pass_available",
+        WORKINK_PASS_USE: "c_workink_pass_use",
+        PING: "c_ping"
+    };
+
+    let challengeSolved = false;
+
+    function solveChallenge() {
+        if (!challengeSolved) return;
+        if (!_linkInfo) return;
+
+        hint.textContent = "⏳ Captcha solved, bypassing... (This can take up to a minute)";
+
+        // Send bypass messages
+        for (const social of _linkInfo.socials) {
+            _sendMessage.call(this, clientPacketTypes.SOCIAL_STARTED, {
+                url: social.url
+            });
+        }
+
+        for (const monetization of _sessionController.monetizations) {
+            log("Processing monetization:", monetization);
+            const monetizationId = monetization.id;
+            const monetizationSendMessage = monetization.sendMessage;
+
+            switch (monetizationId) {
+                case 22: { // readArticles2
+                    monetizationSendMessage.call(monetization, {
+                        event: "read"
+                    });
+                    break;
+                }
+
+                case 25: { // operaGX
+                    monetizationSendMessage.call(monetization, {
+                        event: "start"
+                    });
+                    monetizationSendMessage.call(monetization, {
+                        event: "installClicked"
+                    });
+                    fetch('/_api/v2/affiliate/operaGX', {
+                        method: 'GET',
+                        mode: 'no-cors'
+                    });
+                    setTimeout(() => {
+                        fetch('https://work.ink/_api/v2/callback/operaGX', {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                'noteligible': true
+                            })
+                        });
+                    }, 5000);
+                    break;
+                }
+
+                case 34: { // norton
+                    monetizationSendMessage.call(monetization, {
+                        event: "start"
+                    });
+                    monetizationSendMessage.call(monetization, {
+                        event: "installClicked"
+                    });
+                    break;
+                }
+
+                case 71: { // externalArticles
+                    monetizationSendMessage.call(monetization, {
+                        event: "start"
+                    });
+                    monetizationSendMessage.call(monetization, {
+                        event: "installClicked"
+                    });
+                    break;
+                }
+
+                case 45: { // pdfeditor
+                    monetizationSendMessage.call(monetization,{
+                        event: "installed"
+                    });
+                    break;
+                }
+
+                case 57: { // betterdeals
+                    monetizationSendMessage.call(monetization, {
+                        event: "installed"
+                    });
+                    break;
+                }
+
+                default: {
+                    log("Unknown monetization type:", monetizationId, monetization);
+                    break;
+                }
+            }
+        }
     }
 
     const startTime = Date.now();
 
     function createSendMessageProxy() {
-        const clientPacketTypes = getClientPacketTypes();
-
         return function(...args) {
             const packet_type = args[0];
             const packet_data = args[1];
@@ -109,116 +202,11 @@
                 return;
             }
 
-            if (_sessionController.linkInfo && packet_type === clientPacketTypes.TURNSTILE_RESPONSE) {
+            if (packet_type === clientPacketTypes.TURNSTILE_RESPONSE) {
                 const ret = _sendMessage.apply(this, args);
 
-                hint.textContent = "⏳ Captcha solved, bypassing... (This can take up to a minute)";
-
-                // Send bypass messages
-                for (const social of _sessionController.linkInfo.socials) {
-                    _sendMessage.call(this, clientPacketTypes.SOCIAL_STARTED, {
-                        url: social.url
-                    });
-                }
-
-                for (const monetizationIdx in _sessionController.linkInfo.monetizations) {
-                    const monetization = _sessionController.linkInfo.monetizations[monetizationIdx];
-
-                    switch (monetization) {
-                        case 22: { // readArticles2
-                            _sendMessage.call(this, clientPacketTypes.MONETIZATION, {
-                                type: "readArticles2",
-                                payload: {
-                                    event: "read"
-                                }
-                            });
-                            break;
-                        }
-
-                        case 25: { // operaGX
-                            _sendMessage.call(this, clientPacketTypes.MONETIZATION, {
-                                type: "operaGX",
-                                payload: {
-                                    event: "start"
-                                }
-                            });
-                            _sendMessage.call(this, clientPacketTypes.MONETIZATION, {
-                                type: "operaGX",
-                                payload: {
-                                    event: "installClicked"
-                                }
-                            });
-                            fetch('https://work.ink/_api/v2/callback/operaGX', {
-                                method: 'POST',
-                                mode: 'no-cors',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    'noteligible': true
-                                })
-                            });
-                            break;
-                        }
-
-                        case 34: { // norton
-                            _sendMessage.call(this, clientPacketTypes.MONETIZATION, {
-                                type: "norton",
-                                payload: {
-                                    event: "start"
-                                }
-                            });
-                            _sendMessage.call(this, clientPacketTypes.MONETIZATION, {
-                                type: "norton",
-                                payload: {
-                                    event: "installClicked"
-                                }
-                            });
-                            break;
-                        }
-
-                        case 71: { // externalArticles
-                            _sendMessage.call(this, clientPacketTypes.MONETIZATION, {
-                                type: "externalArticles",
-                                payload: {
-                                    event: "start"
-                                }
-                            });
-                            _sendMessage.call(this, clientPacketTypes.MONETIZATION, {
-                                type: "externalArticles",
-                                payload: {
-                                    event: "installClicked"
-                                }
-                            });
-                            break;
-                        }
-
-                        case 45: { // pdfeditor
-                            _sendMessage.call(this, clientPacketTypes.MONETIZATION, {
-                                type: "pdfeditor",
-                                payload: {
-                                    event: "installed"
-                                }
-                            });
-                            break;
-                        }
-
-                        case 57: { // betterdeals
-                            _sendMessage.call(this, clientPacketTypes.MONETIZATION, {
-                                type: "betterdeals",
-                                payload: {
-                                    event: "installed"
-                                }
-                            });
-                            break;
-                        }
-
-                        default: {
-                            log("Unknown monetization type:", typeof monetization, monetization);
-                            break;
-                        }
-                    }
-                }
+                challengeSolved = true;
+                solveChallenge();
 
                 return ret;
             }
@@ -230,8 +218,10 @@
     function createOnLinkInfoProxy() {
         return function(...args) {
             const linkInfo = args[0];
+            _linkInfo = linkInfo;
 
             log("Link info received:", linkInfo);
+            solveChallenge();
 
             Object.defineProperty(linkInfo, "isAdblockEnabled", {
                 get() { return false },
@@ -247,7 +237,7 @@
     }
 
     function updateHint(waitLeft) {
-        hint.textContent = `⏳ Destination found, redirecting in ${waitLeft} seconds...`;
+        hint.textContent = `⏳ Destination found, redirecting in ${Math.round(waitLeft)} seconds...`;
     }
 
     function redirect(url) {

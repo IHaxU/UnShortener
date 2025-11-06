@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "UnShortener",
-    "version": "1.0.13",
+    "version": "1.0.14",
     "description": "UnShortener enhances your experience on navigating through links that are shortened.",
     "browser_specific_settings": {
         "gecko": {
@@ -17,6 +17,12 @@
         "48": "icons/icon48.png",
         "128": "icons/icon128.png"
     },
+    "permissions": [
+        "declarativeNetRequestWithHostAccess"
+    ],
+    "host_permissions": [
+        "https://work.ink/_api/v2/callback/operaGX"
+    ],
     "content_scripts": [
         {
             "matches": ["https://work.ink/*"],
@@ -24,7 +30,14 @@
             "run_at": "document_start",
             "world": "MAIN"
         }
-    ]
+    ],
+    "declarative_net_request": {
+        "rule_resources": [
+            {
+                "id": "rules",
+                "enabled": true,
+                "path": "rules.json"
+            }
+        ]
+    }
 }
-
-
