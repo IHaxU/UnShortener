@@ -98,7 +98,7 @@
             ]
         }
     },
-     {
+    {
         "id": 4,
         "action": {
             "type": "block"
