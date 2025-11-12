@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "UnShortener",
-    "version": "1.0.14",
+    "version": "1.0.15",
     "description": "UnShortener enhances your experience on navigating through links that are shortened.",
     "browser_specific_settings": {
         "gecko": {
@@ -21,7 +21,7 @@
         "declarativeNetRequestWithHostAccess"
     ],
     "host_permissions": [
-        "https://work.ink/_api/v2/callback/operaGX"
+        "<all_urls>"
     ],
     "content_scripts": [
         {

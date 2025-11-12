@@ -1,20 +1,113 @@
 [
-  {
-    "id": 1,
-    "priority": 1,
-    "action": {
-      "type": "modifyHeaders",
-      "requestHeaders": [
-        {
-          "header": "User-Agent",
-          "operation": "set",
-          "value": "Opera Installer/1.0"
+    {
+        "id": 1,
+        "action": {
+            "type": "modifyHeaders",
+            "requestHeaders": [
+                {
+                    "operation": "set",
+                    "header": "User-Agent",
+                    "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 OPR/122.0.0.0"
+                }
+            ]
+        },
+        "condition": {
+            "resourceTypes": [
+                "csp_report",
+                "font",
+                "image",
+                "main_frame",
+                "media",
+                "object",
+                "other",
+                "ping",
+                "script",
+                "stylesheet",
+                "sub_frame",
+                "webbundle",
+                "websocket",
+                "webtransport",
+                "xmlhttprequest"
+            ],
+            "requestDomains": [
+                "work.ink"
+            ],
+            "initiatorDomains": [
+                "work.ink"
+            ]
         }
-      ]
     },
-    "condition": {
-      "urlFilter": "https://work.ink/_api/v2/callback/operaGX",
-      "resourceTypes": ["main_frame", "xmlhttprequest"]
+    {
+        "id": 2,
+        "action": {
+            "type": "modifyHeaders",
+            "requestHeaders": [
+                {
+                    "operation": "set",
+                    "header": "Sec-CH-UA",
+                    "value": "\"(Not(A:Brand\";v=\"8\", \"Chromium\";v=\"138\", \"Opera GX\";v=\"122\""
+                },
+                {
+                    "operation": "set",
+                    "header": "Sec-CH-UA-Full-Version-List",
+                    "value": "\"(Not(A:Brand\";v=\"8.0.0.0\", \"Chromium\";v=\"138.0.7204.251\", \"Opera GX\";v=\"122.0.5643.178\""
+                },
+                {
+                    "operation": "set",
+                    "header": "Sec-CH-UA-Platform",
+                    "value": "\"Windows\""
+                },
+                {
+                    "operation": "set",
+                    "header": "Sec-CH-UA-Mobile",
+                    "value": "?0"
+                },
+                {
+                    "operation": "remove",
+                    "header": "Sec-CH-UA-Full-Version"
+                },
+                {
+                    "operation": "remove",
+                    "header": "Sec-CH-UA-Platform-Version"
+                }
+            ]
+        },
+        "condition": {
+            "resourceTypes": [
+                "csp_report",
+                "font",
+                "image",
+                "main_frame",
+                "media",
+                "object",
+                "other",
+                "ping",
+                "script",
+                "stylesheet",
+                "sub_frame",
+                "webbundle",
+                "websocket",
+                "webtransport",
+                "xmlhttprequest"
+            ],
+            "requestDomains": [
+                "work.ink"
+            ],
+            "initiatorDomains": [
+                "work.ink"
+            ]
+        }
+    },
+     {
+        "id": 4,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "https://*.work.ink/cdn-cgi/challenge-platform/scripts/jsd/main.js",
+            "resourceTypes": [
+                "script"
+            ]
+        }
     }
-  }
 ]
