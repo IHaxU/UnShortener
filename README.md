@@ -1,6 +1,8 @@
 # UnShortener
 UnShortener enhances your experience on navigating through links that are shortened.
 
+> UnShortener does not claim to bypass security mechanisms or access restricted content. It operates on publicly accessible links and is intended for lawful use.
+
 Currently supported sites:
 [work.ink](https://work.ink/)
 
