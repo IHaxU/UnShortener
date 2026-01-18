@@ -44,7 +44,9 @@
 
     const NAME_MAP = {
         onLinkInfo: ["onLinkInfo"],
-        onLinkDestination: ["onLinkDestination"]
+        onLinkDestination: ["onLinkDestination"],
+        onProxyDetected: ["onProxyDetected"],
+        onMonocleFailed: ["onMonocleFailed"]
     };
 
     function resolveName(obj, candidates) {
@@ -70,6 +72,8 @@
     let _sessionController = undefined;
     let _linkInfo = undefined;
     let _sendMessage = undefined;
+    let _onProxyDetected = undefined;
+    let _onMonocleFailed = undefined;
     let _onLinkInfo = undefined;
     let _onLinkDestination = undefined;
     
@@ -87,7 +91,8 @@
         FOCUS: "c_focus",
         WORKINK_PASS_AVAILABLE: "c_workink_pass_available",
         WORKINK_PASS_USE: "c_workink_pass_use",
-        PING: "c_ping"
+        PING: "c_ping",
+        MONOCLE: "c_monocle"
     };
 
     let challengeSolved = false;
@@ -100,6 +105,7 @@
 
         // Send bypass messages
         for (const social of _linkInfo.socials) {
+            log("Processing social:", social);
             _sendMessage.call(this, clientPacketTypes.SOCIAL_STARTED, {
                 url: social.url
             });
@@ -197,6 +203,12 @@
                 log("Sent message:", packet_type, packet_data);
             }
 
+            // https://docs.spur.us/monocle/assessment, vpn/proxy detection
+            if (packet_data === clientPacketTypes.MONOCLE) {
+                warn("Blocked monocle message to avoid detections.");
+                return;
+            }
+
             if (packet_type === clientPacketTypes.ADBLOCKER_DETECTED) {
                 warn("Blocked adblocker detected message to avoid false positive.");
                 return;
@@ -277,18 +289,38 @@
         };
     }
 
+    function createOnProxyDetectedProxy() {
+        return function () {
+            log("Proxy detection blocked.");
+            return;
+        };
+    }
+
+    function createOnMonocleFailedProxy() {
+        return function (...args) {
+            log("Monocle failure detection blocked.");
+            return;
+        };
+    }
+
     function setupSessionControllerProxy() {
         const sendMessage = resolveWriteFunction(_sessionController);
         const onLinkInfo = resolveName(_sessionController, NAME_MAP.onLinkInfo);
         const onLinkDestination = resolveName(_sessionController, NAME_MAP.onLinkDestination);
+        const onProxyDetected = resolveName(_sessionController, NAME_MAP.onProxyDetected);
+        const onMonocleFailed = resolveName(_sessionController, NAME_MAP.onMonocleFailed);
 
         _sendMessage = sendMessage.fn;
         _onLinkInfo = onLinkInfo.fn;
         _onLinkDestination = onLinkDestination.fn;
+        _onProxyDetected = onProxyDetected.fn;
+        _onMonocleFailed = onMonocleFailed.fn;
 
         const sendMessageProxy = createSendMessageProxy();
         const onLinkInfoProxy = createOnLinkInfoProxy();
         const onLinkDestinationProxy = createOnLinkDestinationProxy();
+        const onProxyDetectedProxy = createOnProxyDetectedProxy();
+        const onMonocleFailedProxy = createOnMonocleFailedProxy();
 
         // Patch the actual property name that exists
         Object.defineProperty(_sessionController, sendMessage.name, {
@@ -312,7 +344,21 @@
             enumerable: true
         });
 
-        log(`SessionController proxies installed: ${sendMessage.name}, ${onLinkInfo.name}, ${onLinkDestination.name}`);
+        Object.defineProperty(_sessionController, onProxyDetected.name, {
+            get() { return onProxyDetectedProxy },
+            set(newValue) { _onProxyDetected = newValue },
+            configurable: false,
+            enumerable: true
+        });
+
+        Object.defineProperty(_sessionController, onMonocleFailed.name, {
+            get() { return onMonocleFailedProxy },
+            set(newValue) { _onMonocleFailed = newValue },
+            configurable: false,
+            enumerable: true
+        });
+
+        log(`SessionController proxies installed: ${sendMessage.name}, ${onLinkInfo.name}, ${onLinkDestination.name}, ${onProxyDetected.name}, ${onMonocleFailed.name}`);
     }
 
     function checkForSessionController(target, prop, value, receiver) {
@@ -437,6 +483,27 @@
 
     // Patched in 2 cpu cycles atp
     window.googletag = {cmd: [], _loaded_: true};
+
+    // More adblocker detections, really?
+    const originalFetch = window.fetch;
+
+    function createFetchProxy() {
+        return function(...args) {
+            const url = args[0];
+            const options = args[1] || {};
+            if (url === "https://js.stripe.com/v3/" && options.method === "HEAD" && options.mode === "no-cors") {
+                log("Blocked ad blocker check:", url);
+                return Promise.resolve(new Response("", { status: 200 }));
+            } else if (url === "/country.json") {
+                log("Blocked country.json fetch:", url);
+                return Promise.resolve(new Response(JSON.stringify({ countryCode: "US" }), { status: 200 }));
+            }
+            return originalFetch.apply(this, args);
+        };
+    }
+
+    const fetchProxy = createFetchProxy();
+    window.fetch = fetchProxy;
 
     // Define blocked ad classes and ids
     const blockedClasses = [

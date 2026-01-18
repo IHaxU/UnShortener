@@ -7,7 +7,7 @@
                 {
                     "operation": "set",
                     "header": "User-Agent",
-                    "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 OPR/122.0.0.0"
+                    "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 OPR/125.0.0.0"
                 }
             ]
         },
@@ -45,12 +45,12 @@
                 {
                     "operation": "set",
                     "header": "Sec-CH-UA",
-                    "value": "\"(Not(A:Brand\";v=\"8\", \"Chromium\";v=\"138\", \"Opera GX\";v=\"122\""
+                    "value": "\"Opera GX\";v=\"125\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\""
                 },
                 {
                     "operation": "set",
                     "header": "Sec-CH-UA-Full-Version-List",
-                    "value": "\"(Not(A:Brand\";v=\"8.0.0.0\", \"Chromium\";v=\"138.0.7204.251\", \"Opera GX\";v=\"122.0.5643.178\""
+                    "value": "\"Opera GX\";v=\"125.0.5729.58\", \"Not?A_Brand\";v=\"8.0.0.0\", \"Chromium\";v=\"141.0.7390.125\""
                 },
                 {
                     "operation": "set",
@@ -59,16 +59,38 @@
                 },
                 {
                     "operation": "set",
+                    "header": "Sec-CH-UA-Form-Factors",
+                    "value": "\"Desktop\""
+                },
+                {
+                    "operation": "set",
                     "header": "Sec-CH-UA-Mobile",
                     "value": "?0"
                 },
                 {
-                    "operation": "remove",
-                    "header": "Sec-CH-UA-Full-Version"
+                    "operation": "set",
+                    "header": "Sec-CH-UA-Full-Version",
+                    "value": "\"125.0.5729.58\""
                 },
                 {
-                    "operation": "remove",
-                    "header": "Sec-CH-UA-Platform-Version"
+                    "operation": "set",
+                    "header": "Sec-CH-UA-Platform-Version",
+                    "value": "\"19.0.0\""
+                },
+                {
+                    "operation": "set",
+                    "header": "Sec-CH-UA-Arch",
+                    "value": "\"x86\""
+                },
+                {
+                    "operation": "set",
+                    "header": "Sec-CH-UA-Bitness",
+                    "value": "\"64\""
+                },
+                {
+                    "operation": "set",
+                    "header": "Sec-CH-UA-WoW64",
+                    "value": "?0"
                 }
             ]
         },
@@ -98,13 +120,25 @@
             ]
         }
     },
-    {
+     {
         "id": 4,
         "action": {
             "type": "block"
         },
         "condition": {
             "urlFilter": "https://*.work.ink/cdn-cgi/challenge-platform/scripts/jsd/main.js",
+            "resourceTypes": [
+                "script"
+            ]
+        }
+    },
+    {
+        "id": 5,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "https://mcl.spur.us/*",
             "resourceTypes": [
                 "script"
             ]
