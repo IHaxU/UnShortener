@@ -120,13 +120,13 @@
             ]
         }
     },
-     {
+    {
         "id": 4,
         "action": {
             "type": "block"
         },
         "condition": {
-            "urlFilter": "https://*.work.ink/cdn-cgi/challenge-platform/scripts/jsd/main.js",
+            "urlFilter": "work.ink/cdn-cgi/challenge-platform/scripts/jsd/main.js",
             "resourceTypes": [
                 "script"
             ]
