@@ -143,5 +143,17 @@
                 "script"
             ]
         }
+    },
+    {
+        "id": 6,
+        "action": {
+            "type": "block"
+        },
+        "condition": {
+            "urlFilter": "https://fundingchoicesmessages.google.com/*",
+            "resourceTypes": [
+                "script"
+            ]
+        }
     }
 ]
